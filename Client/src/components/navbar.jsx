@@ -1,6 +1,9 @@
 function Navbar({ onNavigate, currentView }) {
   return (
     <nav>
+      <button onClick={() => onNavigate("home")}>
+        Home
+      </button>
       <button onClick={() => onNavigate("add")}>
         Add a Product
       </button>
