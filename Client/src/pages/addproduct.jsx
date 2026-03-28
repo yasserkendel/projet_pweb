@@ -16,16 +16,35 @@ function AddProduct() {
     return newErrors
   }
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    const foundErrors = validate()
-    if (Object.keys(foundErrors).length > 0) {
-      setErrors(foundErrors)
-      return
-    }
-    console.log("Product to send:", { name, description, price, image })
-    alert("Product added successfully!")
+const handleSubmit = async (e) => {
+  e.preventDefault()
+  const foundErrors = validate()
+  if (Object.keys(foundErrors).length > 0) {
+    setErrors(foundErrors)
+    return
   }
+
+  try {
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/api/products`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, description, price, image })
+    })
+
+    if (!response.ok) throw new Error("Failed to add product")
+
+    // Clear the form on success
+    setName("")
+    setDescription("")
+    setPrice("")
+    setImage("")
+    setErrors({})
+    alert("Product added successfully!")
+
+  } catch (err) {
+    alert("Something went wrong. Is the server running?")
+  }
+}
 
   return (
     <div>
