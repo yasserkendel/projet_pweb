@@ -9,10 +9,8 @@ function App() {
 
   return (
     <>
-      {currentView !== "home" && currentView !== "add" && (
-        <Navbar onNavigate={setCurrentView} currentView={currentView} />
-      )}
-      {currentView === "home" && <Home onNavigate={setCurrentView} />}
+      <Navbar onNavigate={setCurrentView} currentView={currentView} />
+      {currentView === "home" && <Home />}
       {currentView === "add" && <AddProduct onNavigate={setCurrentView} />}
       {currentView === "view" && <ViewProducts />}
     </>

@@ -1,6 +1,6 @@
 import { useEffect } from "react"
 
-function Home({ onNavigate }) {
+function Home() {
   useEffect(() => {
     const link = document.createElement("link")
     link.href = "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;1,300&family=Montserrat:wght@200;300;400&display=swap"
@@ -71,14 +71,7 @@ function Home({ onNavigate }) {
       <h1 className="home-title">Parfum<br /><em>Catalog</em></h1>
       <p className="home-subtitle">Discover the art of fine fragrance</p>
 
-      <div className="btn-group">
-        <button className="btn-primary-home" onClick={() => onNavigate("add")}>
-          + &nbsp; Add a Product
-        </button>
-        <button className="btn-secondary-home" onClick={() => onNavigate("view")}>
-          ≡ &nbsp; View Collection
-        </button>
-      </div>
+  
 
       <div className="diamond-divider">
         <div className="div-line" />

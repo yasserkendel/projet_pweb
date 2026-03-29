@@ -85,11 +85,19 @@ function AddProduct({ onNavigate }) {
         .ap-back:hover { color:#d4af37; }
       `}</style>
 
-      <button
-        className="ap-back"
-        onClick={() => onNavigate("home")}
-        style={{ animation: visible ? "ap-fade-up 0.8s ease 0.1s forwards" : "none", opacity: 0 }}
-      >
+       <button
+          className="ap-back"
+          onClick={() => onNavigate("home")}
+          style={{
+          animation: visible ? "ap-fade-up 0.8s ease 0.1s forwards" : "none",
+          opacity: 0,
+          position: "sticky",
+          top: "24px",
+          alignSelf: "flex-start",
+          zIndex: 10
+  }}
+>
+      
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
           <line x1="12" y1="7" x2="2" y2="7" stroke="currentColor" strokeWidth="1"/>
           <polyline points="6,3 2,7 6,11" stroke="currentColor" strokeWidth="1" fill="none"/>
