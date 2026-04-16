@@ -1,3 +1,21 @@
+:root {
+  --bg-color: #0a0806;
+  --accent-color: #d4af37;
+  --text-primary: #f5f0e8;
+  --text-secondary: rgba(245, 240, 232, 0.45);
+  --border-color: rgba(212, 175, 55, 0.15);
+  --transition-speed: 0.3s;
+}
+
+/* Updated Light Mode Overrides for High Visibility */
+.light-mode {
+  --bg-color: #ffffff;      /* Pure white for maximum contrast */
+  --accent-color: #b38b00;   /* Slightly deeper gold for better visibility on white */
+  --text-primary: #000000;   /* Pure black text */
+  --text-secondary: #222222; /* Dark grey/black instead of faint grey */
+  --border-color: #dddddd;   /* Clearer, solid border lines */
+}
+
 *, *::before, *::after {
   margin: 0;
   padding: 0;
@@ -7,5 +25,7 @@
 html, body, #root {
   height: 100%;
   width: 100%;
-  background: #0a0806;
+  background: var(--bg-color);
+  color: var(--text-primary);
+  transition: background var(--transition-speed) ease, color var(--transition-speed) ease;
 }
