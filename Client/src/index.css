@@ -9,7 +9,7 @@
 
 /* Updated Light Mode Overrides for High Visibility */
 .light-mode {
-  --bg-color: #ffffff;      /* Pure white for maximum contrast */
+  --bg-color: #e1dede;      /* Pure white for maximum contrast */
   --accent-color: #b38b00;   /* Slightly deeper gold for better visibility on white */
   --text-primary: #000000;   /* Pure black text */
   --text-secondary: #222222; /* Dark grey/black instead of faint grey */
