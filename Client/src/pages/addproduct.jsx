@@ -1,23 +1,39 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 
 function AddProduct({ onNavigate }) {
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
   const [price, setPrice] = useState("")
-  const [image, setImage] = useState("")
+  const [image, setImage] = useState("")          // will hold base64 string
+  const [imagePreview, setImagePreview] = useState(null)  // for the preview thumbnail
   const [errors, setErrors] = useState({})
   const [visible, setVisible] = useState(false)
+  const fileInputRef = useRef(null)               // lets us trigger the file picker programmatically
 
   useEffect(() => {
     setTimeout(() => setVisible(true), 50)
   }, [])
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+
+    // Convert the file to a base64 string using FileReader
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setImage(reader.result)         // base64 string, e.g. "data:image/jpeg;base64,/9j/..."
+      setImagePreview(reader.result)  // same string used for the <img> preview
+      setErrors(prev => ({ ...prev, image: undefined }))
+    }
+    reader.readAsDataURL(file)
+  }
 
   const validate = () => {
     const newErrors = {}
     if (!name.trim()) newErrors.name = "Product name is required"
     if (!description.trim()) newErrors.description = "Description is required"
     if (!price || isNaN(price) || price <= 0) newErrors.price = "Enter a valid price"
-    if (!image.trim()) newErrors.image = "Image URL is required"
+    if (!image) newErrors.image = "Please upload an image"
     return newErrors
   }
 
@@ -35,7 +51,7 @@ function AddProduct({ onNavigate }) {
         body: JSON.stringify({ name, description, price, image })
       })
       if (!response.ok) throw new Error("Failed to add product")
-      setName(""); setDescription(""); setPrice(""); setImage(""); setErrors({})
+      setName(""); setDescription(""); setPrice(""); setImage(""); setImagePreview(null); setErrors({})
       alert("Fragrance added to the collection!")
       onNavigate("view")
     } catch (err) {
@@ -97,6 +113,23 @@ function AddProduct({ onNavigate }) {
           transition:color 0.3s ease;
         }
         .light-mode .ap-label { font-weight:600; }
+        .ap-upload-btn {
+          display:inline-flex; align-items:center; gap:8px;
+          padding:9px 16px; background:transparent;
+          border:1px solid var(--border-color);
+          color:var(--text-secondary); cursor:pointer;
+          font-family:'Montserrat',sans-serif; font-weight:300;
+          font-size:10px; letter-spacing:3px; text-transform:uppercase;
+          transition:all 0.3s ease;
+        }
+        .ap-upload-btn:hover {
+          border-color:var(--accent-color);
+          color:var(--accent-color);
+        }
+        .ap-upload-btn.has-file {
+          border-color:var(--accent-color);
+          color:var(--accent-color);
+        }
       `}</style>
 
       <button
@@ -147,19 +180,68 @@ function AddProduct({ onNavigate }) {
             {errors.description && <p style={{ fontSize:"10px", color:"#c0392b", letterSpacing:"1px", margin:"6px 0 0" }}>{errors.description}</p>}
           </div>
 
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"24px" }}>
-            <div style={{ marginBottom:"28px" }}>
-              <label className="ap-label">Price (DA)</label>
-              <input className="ap-input" type="number" placeholder="e.g. 2500"
-                value={price} onChange={(e) => setPrice(e.target.value)} />
-              {errors.price && <p style={{ fontSize:"10px", color:"#c0392b", letterSpacing:"1px", margin:"6px 0 0" }}>{errors.price}</p>}
-            </div>
-            <div style={{ marginBottom:"28px" }}>
-              <label className="ap-label">Image URL</label>
-              <input className="ap-input" placeholder="https://..."
-                value={image} onChange={(e) => setImage(e.target.value)} />
-              {errors.image && <p style={{ fontSize:"10px", color:"#c0392b", letterSpacing:"1px", margin:"6px 0 0" }}>{errors.image}</p>}
-            </div>
+          <div style={{ marginBottom:"28px" }}>
+            <label className="ap-label">Price (DA)</label>
+            <input className="ap-input" type="number" placeholder="e.g. 2500"
+              value={price} onChange={(e) => setPrice(e.target.value)} />
+            {errors.price && <p style={{ fontSize:"10px", color:"#c0392b", letterSpacing:"1px", margin:"6px 0 0" }}>{errors.price}</p>}
+          </div>
+
+          <div style={{ marginBottom:"28px" }}>
+            <label className="ap-label">Image</label>
+
+            {/* Hidden real file input — triggered by the styled button below */}
+            <input
+              type="file"
+              accept="image/*"
+              ref={fileInputRef}
+              onChange={handleImageChange}
+              style={{ display:"none" }}
+            />
+
+            {/* Styled upload button */}
+            <button
+              type="button"
+              className={`ap-upload-btn ${imagePreview ? "has-file" : ""}`}
+              onClick={() => fileInputRef.current.click()}
+            >
+              <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                <path d="M6.5 1v8M3 4l3.5-3.5L10 4" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M1 10h11v1.5H1z" fill="currentColor" opacity="0.4"/>
+              </svg>
+              {imagePreview ? "Change image" : "Upload image"}
+            </button>
+
+            {/* Preview thumbnail — only shown after a file is picked */}
+            {imagePreview && (
+              <div style={{ marginTop:"14px", position:"relative", display:"inline-block" }}>
+                <img
+                  src={imagePreview}
+                  alt="Preview"
+                  style={{
+                    width:"100%", maxHeight:"180px", objectFit:"cover",
+                    border:"1px solid var(--border-color)",
+                    display:"block"
+                  }}
+                />
+                {/* Remove button — top-right corner of the preview */}
+                <button
+                  type="button"
+                  onClick={() => { setImage(""); setImagePreview(null); fileInputRef.current.value = "" }}
+                  style={{
+                    position:"absolute", top:"6px", right:"6px",
+                    background:"rgba(0,0,0,0.55)", border:"none", color:"#fff",
+                    width:"22px", height:"22px", cursor:"pointer",
+                    fontSize:"13px", lineHeight:"22px", textAlign:"center",
+                    borderRadius:"2px"
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+            )}
+
+            {errors.image && <p style={{ fontSize:"10px", color:"#c0392b", letterSpacing:"1px", margin:"6px 0 0" }}>{errors.image}</p>}
           </div>
 
           <div style={{ display:"flex", alignItems:"center", gap:"16px", margin:"8px 0 32px" }}>
