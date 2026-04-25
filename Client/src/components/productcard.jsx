@@ -20,8 +20,7 @@ function ProductCard({ product, index = 0 }) {
     >
       <div style={{ width:"100%", height:"220px", overflow:"hidden" }}>
         <img
-          src={product.image}
-          alt={product.name}
+          src={`${import.meta.env.VITE_API_URL}${product.image}`}          alt={product.name}
           style={{
             width:"100%", height:"100%", objectFit:"cover",
             filter:"grayscale(20%)", transition:"transform 0.5s ease, filter 0.5s ease"

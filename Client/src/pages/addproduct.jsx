@@ -4,11 +4,11 @@ function AddProduct({ onNavigate }) {
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
   const [price, setPrice] = useState("")
-  const [image, setImage] = useState("")          // will hold base64 string
-  const [imagePreview, setImagePreview] = useState(null)  // for the preview thumbnail
+  const [imageFile, setImageFile] = useState(null)      // the actual File object
+  const [imagePreview, setImagePreview] = useState(null) // local URL just for the preview
   const [errors, setErrors] = useState({})
   const [visible, setVisible] = useState(false)
-  const fileInputRef = useRef(null)               // lets us trigger the file picker programmatically
+  const fileInputRef = useRef(null)
 
   useEffect(() => {
     setTimeout(() => setVisible(true), 50)
@@ -17,15 +17,9 @@ function AddProduct({ onNavigate }) {
   const handleImageChange = (e) => {
     const file = e.target.files[0]
     if (!file) return
-
-    // Convert the file to a base64 string using FileReader
-    const reader = new FileReader()
-    reader.onloadend = () => {
-      setImage(reader.result)         // base64 string, e.g. "data:image/jpeg;base64,/9j/..."
-      setImagePreview(reader.result)  // same string used for the <img> preview
-      setErrors(prev => ({ ...prev, image: undefined }))
-    }
-    reader.readAsDataURL(file)
+    setImageFile(file)
+    setImagePreview(URL.createObjectURL(file)) // temporary browser-local URL, only for preview
+    setErrors(prev => ({ ...prev, image: undefined }))
   }
 
   const validate = () => {
@@ -33,25 +27,36 @@ function AddProduct({ onNavigate }) {
     if (!name.trim()) newErrors.name = "Product name is required"
     if (!description.trim()) newErrors.description = "Description is required"
     if (!price || isNaN(price) || price <= 0) newErrors.price = "Enter a valid price"
-    if (!image) newErrors.image = "Please upload an image"
+    if (!imageFile) newErrors.image = "Please upload an image"
     return newErrors
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     const foundErrors = validate()
-    if (Object.keys(foundErrors).length > 0) {
-      setErrors(foundErrors)
-      return
-    }
+    if (Object.keys(foundErrors).length > 0) { setErrors(foundErrors); return }
+
     try {
+      // FormData is used instead of JSON — this is what allows sending a real file
+      const formData = new FormData()
+      formData.append("name", name)
+      formData.append("description", description)
+      formData.append("price", price)
+      formData.append("image", imageFile) // the File object goes here — Multer reads this on the server
+
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/products`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, description, price, image })
+        // No "Content-Type" header — the browser sets it automatically for FormData
+        //  and includes the required boundary string that Multer needs to parse the file
+        body: formData
       })
+
       if (!response.ok) throw new Error("Failed to add product")
-      setName(""); setDescription(""); setPrice(""); setImage(""); setImagePreview(null); setErrors({})
+
+      setName(""); setDescription(""); setPrice("")
+      setImageFile(null); setImagePreview(null); setErrors({})
+      if (fileInputRef.current) fileInputRef.current.value = ""
+
       alert("Fragrance added to the collection!")
       onNavigate("view")
     } catch (err) {
@@ -85,10 +90,7 @@ function AddProduct({ onNavigate }) {
         .ap-input[type=number]::-webkit-outer-spin-button,
         .ap-input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
         .ap-input[type=number] { -moz-appearance:textfield; }
-        .light-mode .ap-input {
-          border-bottom:2px solid var(--border-color);
-          font-weight:500;
-        }
+        .light-mode .ap-input { border-bottom:2px solid var(--border-color); font-weight:500; }
         .light-mode .ap-input::placeholder { color:#666666; opacity:0.8; }
         .ap-btn {
           width:100%; padding:18px; background:var(--accent-color); color:var(--bg-color);
@@ -122,14 +124,8 @@ function AddProduct({ onNavigate }) {
           font-size:10px; letter-spacing:3px; text-transform:uppercase;
           transition:all 0.3s ease;
         }
-        .ap-upload-btn:hover {
-          border-color:var(--accent-color);
-          color:var(--accent-color);
-        }
-        .ap-upload-btn.has-file {
-          border-color:var(--accent-color);
-          color:var(--accent-color);
-        }
+        .ap-upload-btn:hover { border-color:var(--accent-color); color:var(--accent-color); }
+        .ap-upload-btn.has-file { border-color:var(--accent-color); color:var(--accent-color); }
       `}</style>
 
       <button
@@ -190,7 +186,6 @@ function AddProduct({ onNavigate }) {
           <div style={{ marginBottom:"28px" }}>
             <label className="ap-label">Image</label>
 
-            {/* Hidden real file input — triggered by the styled button below */}
             <input
               type="file"
               accept="image/*"
@@ -199,7 +194,6 @@ function AddProduct({ onNavigate }) {
               style={{ display:"none" }}
             />
 
-            {/* Styled upload button */}
             <button
               type="button"
               className={`ap-upload-btn ${imagePreview ? "has-file" : ""}`}
@@ -212,32 +206,26 @@ function AddProduct({ onNavigate }) {
               {imagePreview ? "Change image" : "Upload image"}
             </button>
 
-            {/* Preview thumbnail — only shown after a file is picked */}
             {imagePreview && (
-              <div style={{ marginTop:"14px", position:"relative", display:"inline-block" }}>
+              <div style={{ marginTop:"14px", position:"relative", display:"inline-block", width:"100%" }}>
                 <img
                   src={imagePreview}
                   alt="Preview"
-                  style={{
-                    width:"100%", maxHeight:"180px", objectFit:"cover",
-                    border:"1px solid var(--border-color)",
-                    display:"block"
-                  }}
+                  style={{ width:"100%", maxHeight:"180px", objectFit:"cover", border:"1px solid var(--border-color)", display:"block" }}
                 />
-                {/* Remove button — top-right corner of the preview */}
                 <button
                   type="button"
-                  onClick={() => { setImage(""); setImagePreview(null); fileInputRef.current.value = "" }}
+                  onClick={() => {
+                    setImageFile(null); setImagePreview(null)
+                    if (fileInputRef.current) fileInputRef.current.value = ""
+                  }}
                   style={{
                     position:"absolute", top:"6px", right:"6px",
                     background:"rgba(0,0,0,0.55)", border:"none", color:"#fff",
                     width:"22px", height:"22px", cursor:"pointer",
-                    fontSize:"13px", lineHeight:"22px", textAlign:"center",
-                    borderRadius:"2px"
+                    fontSize:"13px", lineHeight:"22px", textAlign:"center", borderRadius:"2px"
                   }}
-                >
-                  ×
-                </button>
+                >×</button>
               </div>
             )}
 
@@ -250,9 +238,7 @@ function AddProduct({ onNavigate }) {
             <div style={{ flex:1, height:"1px", background:"var(--border-color)" }} />
           </div>
 
-          <button type="submit" className="ap-btn">
-            Add to Collection
-          </button>
+          <button type="submit" className="ap-btn">Add to Collection</button>
 
         </form>
       </div>
